@@ -8,7 +8,7 @@
 
 using namespace std;
 
-void createArr(int* row, int size)
+static void createArr(int* row, int size)
 {
     const int min = 0, max = 20;
     random_device r;
@@ -20,7 +20,7 @@ void createArr(int* row, int size)
     }
 }
 
-void printArr(int* row, int size, string letter, int rank, string rowOrCal)
+static void printArr(int* row, int size, string letter, int rank, string rowOrCal)
 {
     cout << rowOrCal << " " << rank << " of matrix " << letter << ":";
     for (int i = 0; i < size; i++)
@@ -28,18 +28,6 @@ void printArr(int* row, int size, string letter, int rank, string rowOrCal)
         cout << setw(4) << row[i];
     }
     cout << endl;
-}
-
-int findMaxElem(int* row, int size) {
-    int max = row[0];
-    for (int i = 1; i < size; i++)
-    {
-        if (row[i] > max)
-        {
-            max = row[i];
-        }
-    }
-    return max;
 }
 
 int main(int argc, char** argv)
@@ -80,34 +68,31 @@ int main(int argc, char** argv)
     printArr(rowA, size, "A", rank, "Row");
     createArr(colB, size);
     printArr(colB, size, "B", rank, "Col");
-
-    for (int i = 0; i < size; i++) {
-        int* sumMas = new int[size];
-        int* maxKMas = new int[size];
+    
+    int res = rowA[0] + colB[0];
+    for (int i = 0; i < size; i++) 
+    {
+        int maxVal = rowA[0] + colB[0];
         for (int j = 0; j < size; j++) {
             for (int k = 0; k < size; k++) {
                 int temp = rowA[k] + colB[k];
-                sumMas[k] = temp;
+                if (maxVal < temp) {
+                    maxVal = temp;
+                }
             }
-            maxKMas[j] = findMaxElem(sumMas, size);
+            if (res < maxVal) {
+                res = maxVal;
+            }
         }
-        masArr[i] = findMaxElem(sumMas, size);
         if (i < size - 1) {
             MPI_Sendrecv_replace(colB, size, MPI_INT, destination, tag, source, tag, comm, &status); 
                         // для смещения colB вдоль направления процессов 
                         // (обмен между всеми процессами сначала отправляет затем приничает каждый процесс это делает)
         }
-
-        delete[] sumMas;
-        delete[] maxKMas;
     }
 
-    int res = findMaxElem(masArr, size);
     cout << "Result " << rank << " : " << res << endl;
 
-    delete[] rowA;
-    delete[] colB;
-    delete[] masArr;
     MPI_Comm_free(&comm);
     MPI_Finalize();
     return 0;
